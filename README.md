@@ -10,6 +10,7 @@ npm install easy-api-js
 Usage:
 ```javascript
 // Define routes
+// The params in the route will be replaced with values from the data object that you'll pass when calling a function
 var routes = {
     'users.save':   '/users/save/:id',
     'users.delete': '/users/delete/:id',
@@ -25,21 +26,27 @@ var userAPI = {
     },
 
 	// The above object equals the following function
-    //save(data) {
+    //save: function(data) {
     //    let route = this.getRoute('users.save', data);
     //    return this.post(route, data);
     //},
 
-    find(data) {
-        let route = this.getRoute('users.get', data);
+    fetch(data) {
+        let route = this.getRoute('users.fetch', data);
         return this.get(route);
     }
 };
 
 // Create the API
-new API('//api.somedomain.com', {
+var API = new API('//api.somedomain.com', {
     routes: routes,
     domains: {users: userAPI}
 });
 
+// Anywhere you make the API available you can use it to call your specified functions
+API.users.save({id: 5, name: 'FooBaR'}).then(function(result){
+	// Do something with the result
+}).catch(function(error){
+	// Handle API error
+});
 ```
