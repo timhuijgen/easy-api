@@ -1,5 +1,5 @@
 {
-  "name": "easy-api",
+  "name": "easy-api-js",
   "version": "1.0.0",
   "description": "Easy to use REST API functionality for browsers",
   "main": "API.js",

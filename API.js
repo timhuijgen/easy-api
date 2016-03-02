@@ -108,13 +108,23 @@ API.prototype.add = function() {
 };
 
 API.prototype.addDomain = function( name, domain ) {
-    var self = this;
+    var self = this,
+        rewrite = ['get', 'post', 'put', 'delete'];
+
     $.each(domain, function( key, prop ) {
+        if(rewrite.indexOf(key) > -1) {
+            throw Error('You can not define a function with the following protected name: ' + key);
+        }
         if ( typeof prop === "object" ) {
             Object.defineProperty(domain, key, {
                 get: function() {
                     return function( data ) {
-                        var path = self.buildRoute(name, key, data);
+                        var path = '';
+                        if(prop.route) {
+                            path = self.getRoute(prop.route, data);
+                        } else {
+                            path = self.buildRoute(name, key, data);
+                        }
                         return self[ prop.method.toLowerCase() ].call(self, path, data);
                     }
                 },
@@ -124,8 +134,9 @@ API.prototype.addDomain = function( name, domain ) {
     });
 
     this.domains[ name ] = $.extend(new Domain(name, this), domain);
+
     Object.defineProperty(this, name, {
-        get: function() { return this.domains[ name ] }.bind(this),
+        get: function() { return self.domains[ name ] },
         set: function() { throw Error('You can not directly set domains'); }
     });
 
