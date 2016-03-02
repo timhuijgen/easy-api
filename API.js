@@ -1,5 +1,5 @@
 require('promise-polyfill');
-var $ = require('jquery');
+var $      = require('jquery');
 var Domain = require('./domain');
 
 var API = function( url, options ) {
@@ -86,19 +86,19 @@ API.prototype.add = function() {
 
     if ( args.length > 1 && args.length % 2 === 0 ) {
         // There is even amount of arguments & 2 or more
-        for(var i = 0; i < args.length; i += 2) {
-            this.addDomain(args[i], args[i + 1]);
+        for ( var i = 0; i < args.length; i += 2 ) {
+            this.addDomain(args[ i ], args[ i + 1 ]);
         }
         return;
-    } else if ( $.isArray(args[ 0 ]) && args[0 ].length % 2 === 0 ) {
+    } else if ( $.isArray(args[ 0 ]) && args[ 0 ].length % 2 === 0 ) {
         // Is array and even amount of arguments
-        for(var i = 0; i < args.length; i += 2) {
-            this.addDomain(args[0][i], args[0][i + 1]);
+        for ( var y = 0; y < args[ 0 ].length; y += 2 ) {
+            this.addDomain(args[ 0 ][ y ], args[ 0 ][ y + 1 ]);
         }
         return;
-    } else if ( $.isPlainObject(args[0]) ) {
+    } else if ( $.isPlainObject(args[ 0 ]) ) {
         // Is object
-        $.each(args[0], function(key, value) {
+        $.each(args[ 0 ], function( key, value ) {
             this.addDomain(key, value);
         }.bind(this));
         return;
@@ -108,11 +108,11 @@ API.prototype.add = function() {
 };
 
 API.prototype.addDomain = function( name, domain ) {
-    var self = this,
-        rewrite = ['get', 'post', 'put', 'delete'];
+    var self    = this,
+        rewrite = [ 'get', 'post', 'put', 'delete' ];
 
     $.each(domain, function( key, prop ) {
-        if(rewrite.indexOf(key) > -1) {
+        if ( rewrite.indexOf(key) > -1 ) {
             throw Error('You can not define a function with the following protected name: ' + key);
         }
         if ( typeof prop === "object" ) {
@@ -120,7 +120,7 @@ API.prototype.addDomain = function( name, domain ) {
                 get: function() {
                     return function( data ) {
                         var path = '';
-                        if(prop.route) {
+                        if ( prop.route ) {
                             path = self.getRoute(prop.route, data);
                         } else {
                             path = self.buildRoute(name, key, data);
