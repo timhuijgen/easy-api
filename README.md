@@ -1,5 +1,6 @@
 # easy-api-js
 Easy to use REST API functionality for browsers
+
 You need jQuery & Promise-polyfill in the DOM when not using build tools like webpack or browserify
 
 
@@ -26,16 +27,19 @@ var userAPI = {
     save: {
         method: 'POST',
         //route: 'users.save' // optional
+        options: { // Optional options applied only to this method call
+            dataType: 'text/html'
+        }
     },
 
-	// The above object equals the following function
+	// You can define a function instead of a configuration object to handle calls yourself:
     //save: function(data) {
-    //    let route = this.getRoute('users.save', data);
+    //    let route = this.getRoute('users.save', data});
     //    return this.post(route, data);
     //},
 
     fetch(data) {
-        let route = this.getRoute('users.fetch', data);
+        var route = this.getRoute('users.fetch', data);
         return this.get(route);
     }
 };
@@ -43,7 +47,12 @@ var userAPI = {
 // Create the API
 var API = new easyAPI('//api.somedomain.com', {
     routes: routes,
-    domains: {users: userAPI}
+    domains: {users: userAPI},
+    options: { // Optional global options given to every ajax call
+        headers: {
+            "Authorization": "Basic " + btoa('Foo' + ":" + 'Bar')
+        },
+    }
 });
 
 // Anywhere you make the API available you can use it to call your specified functions

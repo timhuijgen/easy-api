@@ -1,4 +1,4 @@
-(function($) {
+(function( $ ) {
     /**
      * @param {string} url
      * @param {object} options
@@ -21,22 +21,24 @@
      * @param {string} method
      * @param {string} path
      * @param {object|null} data
+     * @param {object|null} options
      * @returns {Promise}
      */
-    API.prototype.ajax = function( method, path, data ) {
+    API.prototype.ajax = function( method, path, data, options ) {
         data = data || {};
+        options = options || {};
 
         return new Promise(function( resolve, reject ) {
 
-            var options = $.extend({}, {
+            var combinedOptions = $.extend({}, {
                 method:   method,
                 data:     data,
                 dataType: 'json',
                 error:    reject,
                 success:  resolve
-            }, this.ajax_options);
+            }, this.ajax_options, options);
 
-            $.ajax(this.url + path, options);
+            $.ajax(this.url + path, combinedOptions);
         }.bind(this));
     };
 
@@ -44,39 +46,43 @@
      * Shorthand POST call
      * @param {string} path
      * @param {object} data
+     * @param {object} options
      * @returns {Promise}
      */
-    API.prototype.post = function( path, data ) {
-        return this.ajax('POST', path, data);
+    API.prototype.post = function( path, data, options ) {
+        return this.ajax('POST', path, data, options);
     };
 
     /**
      * Shorthand GET call
      * @param {string} path
+     * @param {object} options
      * @returns {Promise}
      */
-    API.prototype.get = function( path ) {
-        return this.ajax('GET', path);
+    API.prototype.get = function( path, data, options ) {
+        return this.ajax('GET', path, data, options);
     };
 
     /**
      * Shorthand PUT call
      * @param {string} path
      * @param {object} data
+     * @param {object} options
      * @returns {Promise}
      */
-    API.prototype.put = function( path, data ) {
-        return this.ajax('PUT', path, data);
+    API.prototype.put = function( path, data, options ) {
+        return this.ajax('PUT', path, data, options);
     };
 
     /**
      * Shorthand DELETE call
      * @param {string} path
      * @param {object} data
+     * @param {object} options
      * @returns {Promise}
      */
-    API.prototype.delete = function( path, data ) {
-        return this.ajax('DELETE', path, data);
+    API.prototype.delete = function( path, data, options ) {
+        return this.ajax('DELETE', path, data, options);
     };
 
     /**
@@ -193,7 +199,8 @@
                             var path = (prop.route)
                                 ? self.getRoute(prop.route, data)
                                 : self.buildRoute(name, key, data);
-                            return self[ prop.method.toLowerCase() ].call(self, path, data);
+                            var options = prop.options || {};
+                            return self[ prop.method.toLowerCase() ].apply(self, [path, data, options]);
                         }
                     },
                     set: function() { throw Error('You can not directly set API functions'); }
@@ -235,17 +242,17 @@
      * @param {...}
      * @returns {Promise}
      */
-    Domain.prototype.get = function( a ) { return this.API.get(a) };
-    Domain.prototype.post   = function( a, b ) { return this.API.post(a, b) };
-    Domain.prototype.put    = function( a, b ) { return this.API.put(a, b) };
-    Domain.prototype.delete = function( a, b ) { return this.API.delete(a, b) };
+    Domain.prototype.get = function( a, b ) { return this.API.get(a, b) };
+    Domain.prototype.post   = function( a, b, c ) { return this.API.post(a, b, c) };
+    Domain.prototype.put    = function( a, b, c ) { return this.API.put(a, b, c) };
+    Domain.prototype.delete = function( a, b, c ) { return this.API.delete(a, b, c) };
 
     /**
      * Export to window or as module depending on environment
      * @type {API}
      */
     (function( factory ) {
-        if(typeof exports === 'object') {
+        if ( typeof exports === 'object' ) {
             module.exports = exports = factory;
         } else {
             window.API = factory;
@@ -256,7 +263,7 @@
      * Require jQuery or check for it in the DOM
      */
 })(function() {
-    if(typeof exports === 'object') {
+    if ( typeof exports === 'object' ) {
         require('promise-polyfill');
         return require('jquery');
     }
