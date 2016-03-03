@@ -1,7 +1,7 @@
 # easy-api-js
 Easy to use REST API functionality for browsers
+You need jQuery & Promise-polyfill in the DOM when not using build tools like webpack or browserify
 
-You'll need a build tool like webpack or browserify to use this package
 
 ```javascript
 npm install easy-api-js
@@ -9,6 +9,9 @@ npm install easy-api-js
 
 Usage:
 ```javascript
+// Import
+var easyAPI = require('easy-api-js');
+
 // Define routes
 // The params in the route will be replaced with values from the data object that you'll pass when calling a function
 var routes = {
@@ -38,7 +41,7 @@ var userAPI = {
 };
 
 // Create the API
-var API = new API('//api.somedomain.com', {
+var API = new easyAPI('//api.somedomain.com', {
     routes: routes,
     domains: {users: userAPI}
 });
