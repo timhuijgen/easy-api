@@ -255,7 +255,7 @@
         if ( typeof exports === 'object' ) {
             module.exports = exports = factory;
         } else {
-            window.API = factory;
+            window.easyAPI = factory;
         }
     })(API);
 

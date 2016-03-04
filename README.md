@@ -14,7 +14,8 @@ Usage:
 var easyAPI = require('easy-api-js');
 
 // Define routes
-// The params in the route will be replaced with values from the data object that you'll pass when calling a function
+// The params in the route will be replaced with values from the 
+// data object that you'll pass when calling a function
 var routes = {
     'users.save':   '/users/save/:id',
     'users.delete': '/users/delete/:id',
@@ -23,7 +24,8 @@ var routes = {
 
 // Define API functions
 var userAPI = {
-	// You can specify a domain as an object: this will use the route users.save automatically
+	// You can specify a domain as an object: 
+	// this will use the route users.save automatically
     save: {
         method: 'POST',
         //route: 'users.save' // optional
@@ -32,13 +34,14 @@ var userAPI = {
         }
     },
 
-	// You can define a function instead of a configuration object to handle calls yourself:
+	// You can define a function instead of a configuration 
+	// object to handle calls yourself:
     //save: function(data) {
     //    let route = this.getRoute('users.save', data});
     //    return this.post(route, data);
     //},
 
-    fetch(data) {
+    fetch: function(data) {
         var route = this.getRoute('users.fetch', data);
         return this.get(route);
     }
