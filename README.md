@@ -1,8 +1,7 @@
 # easy-api-js
-Easy to use REST API functionality for browsers
+Easy to use REST calls from browsers - Using the browser fetch API
 
-You need jQuery & Promise-polyfill in the DOM when not using build tools like webpack or browserify
-
+When not using a buildtool like browserify / webpack and you want to support legacy browsers you'll need polyfills for: fetch, Promise, and Object.assign
 
 ```javascript
 npm install easy-api-js
@@ -24,18 +23,18 @@ var routes = {
 
 // Define API functions
 var userAPI = {
-	// You can specify a domain as an object: 
-	// this will use the route users.save automatically
+	// You can specify a domain function as an object: 
+    // this will use the route users.save automatically
     save: {
         method: 'POST',
         //route: 'users.save' // optional
         options: { // Optional options applied only to this method call
-            dataType: 'text/html'
+            parse: 'blob'
         }
     },
 
-	// You can define a function instead of a configuration 
-	// object to handle calls yourself:
+	// You can define a function instead of a configuration object
+	// to handle calls yourself:    
     //save: function(data) {
     //    let route = this.getRoute('users.save', data});
     //    return this.post(route, data);
@@ -51,16 +50,19 @@ var userAPI = {
 var API = new easyAPI('//api.somedomain.com', {
     routes: routes,
     domains: {users: userAPI},
-    options: { // Optional global options given to every ajax call
+    options: { // Optional global options given to every call
         headers: {
             "Authorization": "Basic " + btoa('Foo' + ":" + 'Bar')
         },
+        parse: "json" // All fetch Body methods are supported [arrayBuffer, blob, formData, json, text]
     }
 });
 
 // Anywhere you make the API available you can use it to call your specified functions
 API.users.save({id: 5, name: 'FooBaR'}).then(function(result){
 	// Do something with the result
+	// If you passed a valid parse option the result here will already be parsed
+	// If not then you can parse it yourself by calling result.json() or any other Body parsing method
 }).catch(function(error){
 	// Handle API error
 });

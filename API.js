@@ -1,45 +1,102 @@
-(function( $ ) {
+(function () {
+    /**
+     * Require Promise & fetch & assign polyfills
+     */
+    if ( typeof exports === 'object' ) {
+        require('promise-polyfill');
+        require('whatwg-fetch');
+        require('es6-object-assign').polyfill();
+    }
+
+    /**
+     * Utils
+     */
+    var objectAssign = Object.assign,
+        isObject     = function (prop) {
+            return prop.toString() === "[object Object]"
+        },
+        isArray      = function (prop) {
+            return Object.prototype.toString.call(prop) === "[object Array]"
+        };
+
     /**
      * @param {string} url
      * @param {object} options
      * @constructor
      */
-    var API = function( url, options ) {
-        this.url          = url;
-        this.routes       = options.routes || {};
-        this.domains      = [];
-        this.ajax_options = options.options || {};
-        if ( options.domains ) {
-            $.each(options.domains, function( key, domain ) {
-                this.addDomain(key, domain);
-            }.bind(this));
+    var API = function (url, options) {
+        if ( !url ) {
+            throw Error('URL is required');
+        }
+
+        options = options || {};
+
+        this.url     = url;
+        this.routes  = options.routes || {};
+        this.domains = [];
+        this.options = options.options || {};
+
+        if ( options.domains instanceof Object ) {
+            for ( var key in options.domains ) {
+                if ( !isObject(options.domains[ key ]) ) {
+                    throw Error('Expecting objects in domains');
+                }
+                if ( options.domains.hasOwnProperty(key) ) {
+                    this.addDomain(key, options.domains[ key ]);
+                }
+            }
         }
     };
 
     /**
-     * Perform the ajax call to the API
+     * Alias of _fetch
      * @param {string} method
      * @param {string} path
      * @param {object|null} data
      * @param {object|null} options
      * @returns {Promise}
      */
-    API.prototype.ajax = function( method, path, data, options ) {
-        data = data || {};
+    API.prototype.ajax = function (method, path, data, options) {
+        return this.fetch(method, path, data, options);
+    };
+
+    /**
+     * Perform the call to the API
+     * @param {string} method
+     * @param {string} path
+     * @param {object|null} data
+     * @param {object|null} options
+     * @returns {Promise}
+     */
+    API.prototype.fetch = function (method, path, data, options) {
+        data    = data || {};
         options = options || {};
 
-        return new Promise(function( resolve, reject ) {
+        var parseOptions = [ 'arrayBuffer', 'blob', 'formData', 'json', 'text' ];
 
-            var combinedOptions = $.extend({}, {
-                method:   method,
-                data:     data,
-                dataType: 'json',
-                error:    reject,
-                success:  resolve
-            }, this.ajax_options, options);
+        var body = new FormData();
+        body.append("json", JSON.stringify(data));
 
-            $.ajax(this.url + path, combinedOptions);
-        }.bind(this));
+        var combinedOptions = Object.assign({},
+            this.options,
+            options,
+            {
+                method: method,
+                body:   body
+            });
+
+        var promise = fetch(this.url + path, combinedOptions);
+
+        if ( combinedOptions.parse && parseOptions.indexOf(combinedOptions.parse) > -1 ) {
+            return promise.then(function (response) {
+                if( response[combinedOptions.parse] ) {
+                    return response[ combinedOptions.parse ].apply(response);
+                }
+                throw Error('Could not parse the results with [' + combinedOptions.parse + ']');
+            })
+        }
+
+        return promise;
     };
 
     /**
@@ -49,17 +106,18 @@
      * @param {object} options
      * @returns {Promise}
      */
-    API.prototype.post = function( path, data, options ) {
+    API.prototype.post = function (path, data, options) {
         return this.ajax('POST', path, data, options);
     };
 
     /**
      * Shorthand GET call
      * @param {string} path
+     * @param {object} data
      * @param {object} options
      * @returns {Promise}
      */
-    API.prototype.get = function( path, data, options ) {
+    API.prototype.get = function (path, data, options) {
         return this.ajax('GET', path, data, options);
     };
 
@@ -70,7 +128,7 @@
      * @param {object} options
      * @returns {Promise}
      */
-    API.prototype.put = function( path, data, options ) {
+    API.prototype.put = function (path, data, options) {
         return this.ajax('PUT', path, data, options);
     };
 
@@ -81,7 +139,7 @@
      * @param {object} options
      * @returns {Promise}
      */
-    API.prototype.delete = function( path, data, options ) {
+    API.prototype.delete = function (path, data, options) {
         return this.ajax('DELETE', path, data, options);
     };
 
@@ -91,8 +149,9 @@
      * @param {object} data
      * @returns {string}
      */
-    API.prototype.getRoute = function( key, data ) {
+    API.prototype.getRoute = function (key, data) {
         data = data || {};
+
         if ( this.routes.hasOwnProperty(key) ) {
             var route  = this.routes[ key ],
                 chunks = route.split(':');
@@ -116,7 +175,7 @@
      * @param {object} data
      * @returns {string}
      */
-    API.prototype.buildRoute = function( domain, fn, data ) {
+    API.prototype.buildRoute = function (domain, fn, data) {
         var key = domain + '.' + fn;
         return this.getRoute(key, data);
     };
@@ -126,8 +185,8 @@
      * @param {object} routes
      * @returns {API}
      */
-    API.prototype.addRoutes = function( routes ) {
-        this.routes = $.extend(true, this.routes, routes);
+    API.prototype.addRoutes = function (routes) {
+        this.routes = objectAssign({}, this.routes, routes);
 
         return this;
     };
@@ -137,7 +196,7 @@
      * @param routes
      * @returns {API}
      */
-    API.prototype.setRoutes = function( routes ) {
+    API.prototype.setRoutes = function (routes) {
         this.routes = routes;
 
         return this;
@@ -148,7 +207,7 @@
      * @param {...object} arguments
      * @returns {API}
      */
-    API.prototype.add = function() {
+    API.prototype.add = function () {
         var args = arguments;
 
         if ( args.length === 0 ) {
@@ -161,17 +220,19 @@
                 this.addDomain(args[ i ], args[ i + 1 ]);
             }
             return this;
-        } else if ( $.isArray(args[ 0 ]) && args[ 0 ].length % 2 === 0 ) {
+        } else if ( isArray(args[ 0 ]) && args[ 0 ].length % 2 === 0 ) {
             // Is array and even amount of arguments
             for ( var y = 0; y < args[ 0 ].length; y += 2 ) {
                 this.addDomain(args[ 0 ][ y ], args[ 0 ][ y + 1 ]);
             }
             return this;
-        } else if ( $.isPlainObject(args[ 0 ]) ) {
+        } else if ( isObject(args[ 0 ]) ) {
             // Is object
-            $.each(args[ 0 ], function( key, value ) {
-                this.addDomain(key, value);
-            }.bind(this));
+            for ( var key in args[ 0 ] ) {
+                if ( args[ 0 ].hasOwnProperty(key) ) {
+                    this.addDomain(key, args[ 0 ][ key ]);
+                }
+            }
             return this;
         }
 
@@ -181,38 +242,54 @@
     /**
      * Add one domain and setup the properties
      * @param {string} name
-     * @param {object} domain
+     * @param {object} domainData
      * @returns {API}
      */
-    API.prototype.addDomain = function( name, domain ) {
+    API.prototype.addDomain = function (name, domainData) {
         var self     = this,
             reserved = [ 'get', 'post', 'put', 'delete' ];
 
-        $.each(domain, function( key, prop ) {
+        var domain = new Domain(name, this);
+
+        for ( var key in domainData ) {
+            if ( !domainData.hasOwnProperty(key) ) {
+                throw Error('hasOwnProperty check not passed');
+            }
+
             if ( reserved.indexOf(key) > -1 ) {
                 throw Error('You can not define a function with the following reserved name: ' + key);
             }
-            if ( typeof prop === "object" ) {
+
+            var prop = domainData[ key ];
+
+            if ( prop.toString() === "[object Object]" ) {
                 Object.defineProperty(domain, key, {
-                    get: function() {
-                        return function( data ) {
-                            var path = (prop.route)
-                                ? self.getRoute(prop.route, data)
-                                : self.buildRoute(name, key, data);
-                            var options = prop.options || {};
-                            return self[ prop.method.toLowerCase() ].apply(self, [path, data, options]);
+                    get: function (key, prop) {
+                        return function (data) {
+                            var path    = (prop.route)
+                                    ? self.getRoute(prop.route, data)
+                                    : self.buildRoute(name, key, data),
+                                options = prop.options || {};
+
+                            return self[ prop.method.toLowerCase() ].apply(self, [ path, data, options ]);
                         }
-                    },
-                    set: function() { throw Error('You can not directly set API functions'); }
+                    }.bind(this, key, prop),
+                    set: function () {
+                        throw Error('You can not directly set API functions');
+                    }
                 })
             }
-        });
+        }
 
-        this.domains[ name ] = $.extend(new Domain(name, this), domain);
+        this.domains[ name ] = domain;
 
         Object.defineProperty(this, name, {
-            get: function() { return self.domains[ name ] },
-            set: function() { throw Error('You can not directly set domains'); }
+            get: function () {
+                return self.domains[ name ]
+            },
+            set: function () {
+                throw Error('You can not directly set domains');
+            }
         });
 
         return this;
@@ -224,7 +301,7 @@
      * @param {API} API
      * @constructor
      */
-    var Domain = function( name, API ) {
+    var Domain = function (name, API) {
         this.API   = API;
         this._name = name;
     };
@@ -235,37 +312,37 @@
      * @param {object} data
      * @returns {string}
      */
-    Domain.prototype.getRoute = function( key, data ) { return this.API.getRoute(key, data); };
+    Domain.prototype.getRoute = function (key, data) {
+        return this.API.getRoute(key, data);
+    };
 
     /**
-     * Shorthand ajax functions
+     * Shorthand fetch functions
      * @param {...}
      * @returns {Promise}
      */
-    Domain.prototype.get = function( a, b ) { return this.API.get(a, b) };
-    Domain.prototype.post   = function( a, b, c ) { return this.API.post(a, b, c) };
-    Domain.prototype.put    = function( a, b, c ) { return this.API.put(a, b, c) };
-    Domain.prototype.delete = function( a, b, c ) { return this.API.delete(a, b, c) };
+    Domain.prototype.get = function (a, b) {
+        return this.API.get(a, b)
+    };
+    Domain.prototype.post   = function (a, b, c) {
+        return this.API.post(a, b, c)
+    };
+    Domain.prototype.put    = function (a, b, c) {
+        return this.API.put(a, b, c)
+    };
+    Domain.prototype.delete = function (a, b, c) {
+        return this.API.delete(a, b, c)
+    };
 
     /**
      * Export to window or as module depending on environment
      * @type {API}
      */
-    (function( factory ) {
+    (function (factory) {
         if ( typeof exports === 'object' ) {
             module.exports = exports = factory;
         } else {
             window.easyAPI = factory;
         }
     })(API);
-
-    /**
-     * Require jQuery or check for it in the DOM
-     */
-})(function() {
-    if ( typeof exports === 'object' ) {
-        require('promise-polyfill');
-        return require('jquery');
-    }
-    return window.jQuery || window.$;
-}());
+})();
