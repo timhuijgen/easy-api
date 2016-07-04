@@ -81,6 +81,16 @@ describe('Setting up easy api js', function () {
         API.users.save.should.be.a('function');
     });
 
+    it('should throw when trying to set domain properties directly', function () {
+        var API = new easyAPI(dummyData.endpoint, {
+            domains: dummyData.domains
+        });
+
+        expect(function() {
+            API.users.save = function () {}
+        }).to.throw(Error);
+    });
+
     it('should not take non-objects as domans', function () {
         expect(function () {
             new easyAPI(dummyData.endpoint, {
@@ -239,7 +249,7 @@ describe('Easy api js fetch / call functionality', function () {
         }).catch(function (err) {
             throw err;
         }).should.notify(done);
-
+ 
     });
 
     it('should parse text and use route-only parse options', function(done) {

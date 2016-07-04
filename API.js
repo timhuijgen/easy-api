@@ -13,10 +13,10 @@
      */
     var objectAssign = Object.assign,
         isObject     = function (prop) {
-            return prop.toString() === "[object Object]"
+            return prop && prop.toString() === "[object Object]"
         },
         isArray      = function (prop) {
-            return Object.prototype.toString.call(prop) === "[object Array]"
+            return prop && Object.prototype.toString.call(prop) === "[object Array]"
         };
 
     /**
@@ -36,7 +36,7 @@
         this.domains = [];
         this.options = options.options || {};
 
-        if ( options.domains instanceof Object ) {
+        if ( isObject( options.domains ) ) {
             for ( var key in options.domains ) {
                 if ( !isObject(options.domains[ key ]) ) {
                     throw Error('Expecting objects in domains');
@@ -49,7 +49,7 @@
     };
 
     /**
-     * Alias of _fetch
+     * Alias of fetch
      * @param {string} method
      * @param {string} path
      * @param {object|null} data
@@ -107,7 +107,7 @@
      * @returns {Promise}
      */
     API.prototype.post = function (path, data, options) {
-        return this.ajax('POST', path, data, options);
+        return this.fetch('POST', path, data, options);
     };
 
     /**
@@ -118,7 +118,7 @@
      * @returns {Promise}
      */
     API.prototype.get = function (path, data, options) {
-        return this.ajax('GET', path, data, options);
+        return this.fetch('GET', path, data, options);
     };
 
     /**
@@ -129,7 +129,7 @@
      * @returns {Promise}
      */
     API.prototype.put = function (path, data, options) {
-        return this.ajax('PUT', path, data, options);
+        return this.fetch('PUT', path, data, options);
     };
 
     /**
@@ -140,7 +140,7 @@
      * @returns {Promise}
      */
     API.prototype.delete = function (path, data, options) {
-        return this.ajax('DELETE', path, data, options);
+        return this.fetch('DELETE', path, data, options);
     };
 
     /**
@@ -262,7 +262,7 @@
 
             var prop = domainData[ key ];
 
-            if ( prop.toString() === "[object Object]" ) {
+            if ( isObject( prop ) ) {
                 Object.defineProperty(domain, key, {
                     get: function (key, prop) {
                         return function (data) {
@@ -318,11 +318,9 @@
 
     /**
      * Shorthand fetch functions
-     * @param {...}
-     * @returns {Promise}
      */
-    Domain.prototype.get = function (a, b) {
-        return this.API.get(a, b)
+    Domain.prototype.get = function (a, b, c) {
+        return this.API.get(a, b, c)
     };
     Domain.prototype.post   = function (a, b, c) {
         return this.API.post(a, b, c)
